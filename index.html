@@ -135,7 +135,7 @@ function getMT(b){if(TEAMS.some(t=>t.name===b))return b;return BRANCH_TEAM[b]||n
 function gs(total){const r=HOUSE_STAGES.filter(s=>total>=s.min);return r.length?r[r.length-1]:HOUSE_STAGES[0];}
 function isUnlocked(m){return m.arke>=5&&m.riddle>=5;}
 function getCap(m){return isUnlocked(m)?15:5;}
-function getAmtText(m){if(m.riddle>=4)||m.Arke>=4){const c=Math.min(m.total,getCap(m));return(c*10)+"만원";}return null;}
+function getAmtText(m){if(m.riddle>=4||m.arke>=4){const c=Math.min(m.total,getCap(m));return(c*10)+"만원";}return null;}
 function ct(m){return gs(m.total).label;}
 function nt(total){const n=HOUSE_STAGES.find(s=>s.min>total);return n?{needed:n.min-total,tier:n}:null;}
 
@@ -623,7 +623,7 @@ function MyTab({myId,setMyId,members,onSelectTab}){
   const unlocked=isUnlocked(me);
   const cap=getCap(me);
   const hasIncentive=me.riddle>=4||me.arke>=4;
-  const counted=hasIncentive?Math.min(me.tota,cap):0;
+  const counted=hasIncentive?Math.min(me.total,cap):0;
   const needCap=Math.max(0,cap-counted);
   const need4=hasIncentive?0:Math.min(Math.max(0,4-me.riddle),Math.max(0,4-me.arke));
   const incPct=cap>0?Math.min(counted/cap*100,100):0;
@@ -633,7 +633,7 @@ function MyTab({myId,setMyId,members,onSelectTab}){
   let heroTitle;
   if(!hasIncentive){
     heroTitle=<><span style={{fontSize:16,fontWeight:600,color:"#374151",display:"inline-block",marginBottom:8,position:"relative",top:2}}>{me.name}님</span><br/><span style={{color:"#1C5CF1",fontWeight:900}}>{need4}처</span>만 더하면<br/><span style={{color:"#1C5CF1"}}>첫 인센티브 시작!</span></>;
-  }else if(!hasIncentive&&!unlocked){
+  }else if(hasIncentive&&!unlocked){
     heroTitle=<><span style={{fontSize:16,fontWeight:600,color:"#374151",display:"inline-block",marginBottom:9,position:"relative",top:2}}>{me.name}님</span><br/>현재 <span style={{color:"#1C5CF1"}}>{counted}처</span> 달성!<br/><span style={{color:"#F59E0B"}}>{needCap}처만 더 하면 {cap*10}만원</span></>;
   }else{
     heroTitle=<><span style={{fontSize:16,fontWeight:600,color:"#374151",display:"inline-block",marginBottom:9,position:"relative",top:2}}>{me.name}님</span><br/><span style={{color:"#1C5CF1"}}>15처 달성</span> 완료!<br/>현재 <span style={{color:"#F59E0B"}}>{amtText}</span> 달성 중</>;
@@ -903,7 +903,7 @@ const handleFileUpload=e=>{
     // ✅ salesAmt도 0으로 초기화 (하드코딩값 안 씀)
     let memberMap={};
     MEMBERS_INIT.forEach(m=>{
-      memberMap[m.name+"||"+m.branch;memberMap[Key]={...m,riddle:0,arke:0,total:0,streak:0,salesAmt:0};
+      const key= m.name+"||"+m.branch;memberMap[Key]={...m,riddle:0,arke:0,total:0,streak:0,salesAmt:0};
     });
 
     allRows.slice(1).forEach(tr=>{
@@ -950,7 +950,7 @@ if(rCnt>0||aCnt>0){
   memberMap[key].total+=(rCnt+aCnt);
   memberMap[key].streak+=1;
 }
-
+});
     const nm=Object.values(memberMap)
       .sort((a,b)=>b.total!==a.total?b.total-a.total:(b.salesAmt||0)-(a.salesAmt||0))
       .map((m,i)=>({...m,id:i+1}));
