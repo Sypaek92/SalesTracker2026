@@ -226,25 +226,34 @@ function RoadmapPopup({currentTotal,onClose}){
   );
 }
 
-function MemberSearchBox({members,myId,setMyId,onSelectTab}){
+function MemberSearchBox({members,myId,setMyId,onSelectTab,dropUp=false}){
   const[search,setSearch]=useState("");
   const[showDrop,setShowDrop]=useState(false);
   const ref=useRef(null);
+  const inputRef=useRef(null);
   const filtered=search.trim()?members.filter(m=>m.name.includes(search.trim())):[];
   useEffect(()=>{
     const handler=e=>{if(ref.current&&!ref.current.contains(e.target))setShowDrop(false);};
     document.addEventListener("mousedown",handler);
     return()=>document.removeEventListener("mousedown",handler);
   },[]);
+  const handleFocus=()=>{
+    if(search.trim())setShowDrop(true);
+    setTimeout(()=>{
+      if(inputRef.current){
+        inputRef.current.scrollIntoView({behavior:"smooth",block:"center"});
+      }
+    },350);
+  };
   const select=(m)=>{setMyId(m.id);setSearch("");setShowDrop(false);if(onSelectTab)onSelectTab("my");};
   return(
     <div ref={ref} style={{position:"relative"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,background:"#fff",
         borderRadius:10,padding:"10px 14px",border:"1.5px solid #E5E7EB",boxShadow:"0 2px 8px rgba(0,0,0,.04)"}}>
         <span style={{fontSize:15,flexShrink:0}}>🔍</span>
-        <input value={search}
+        <input ref={inputRef} value={search}
           onChange={e=>{setSearch(e.target.value);setShowDrop(true);}}
-          onFocus={()=>{if(search.trim())setShowDrop(true);}}
+          onFocus={handleFocus}
           placeholder="내 이름 찾기..."
           style={{flex:1,border:"none",outline:"none",fontSize:16,fontFamily:"inherit",background:"transparent",letterSpacing:"-.02em",color:"#1A1A1A"}}/>
         {search&&(
@@ -254,8 +263,8 @@ function MemberSearchBox({members,myId,setMyId,onSelectTab}){
         )}
       </div>
       {showDrop&&filtered.length>0&&(
-        <div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,background:"#fff",borderRadius:10,
-          border:"1.5px solid #E5E7EB",boxShadow:"0 8px 24px rgba(0,0,0,.12)",zIndex:50,overflow:"hidden",maxHeight:220,overflowY:"auto"}}>
+        <div style={{position:"absolute",...(dropUp?{bottom:"calc(100% + 6px)"}:{top:"calc(100% + 6px)"}),left:0,right:0,background:"#fff",borderRadius:10,
+          border:"1.5px solid #E5E7EB",boxShadow:dropUp?"0 -4px 24px rgba(0,0,0,.12)":"0 4px 24px rgba(0,0,0,.12)",zIndex:50,overflow:"hidden",maxHeight:220,overflowY:"auto"}}>
           {filtered.map(m=>(
             <div key={m.id} onClick={()=>select(m)}
               style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",cursor:"pointer",
@@ -273,8 +282,8 @@ function MemberSearchBox({members,myId,setMyId,onSelectTab}){
         </div>
       )}
       {showDrop&&search.trim()&&filtered.length===0&&(
-        <div style={{position:"absolute",top:"calc(100% + 6px)",left:0,right:0,background:"#fff",borderRadius:10,
-          border:"1.5px solid #E5E7EB",boxShadow:"0 8px 24px rgba(0,0,0,.1)",zIndex:50,
+        <div style={{position:"absolute",...(dropUp?{bottom:"calc(100% + 6px)"}:{top:"calc(100% + 6px)"}),left:0,right:0,background:"#fff",borderRadius:10,
+          border:"1.5px solid #E5E7EB",boxShadow:dropUp?"0 -4px 24px rgba(0,0,0,.1)":"0 4px 24px rgba(0,0,0,.1)",zIndex:50,
           padding:"14px",textAlign:"center",color:"#8B95A1",fontSize:13}}>
           검색 결과가 없습니다
         </div>
@@ -370,7 +379,7 @@ function LeaderTab({members,myId,setMyId,onSelectTab}){
           </div>
         ))}
         <div style={{padding:"13px 18px 0"}}>
-          <MemberSearchBox members={members} myId={myId} setMyId={setMyId} onSelectTab={onSelectTab}/>
+          <MemberSearchBox members={members} myId={myId} setMyId={setMyId} onSelectTab={onSelectTab} dropUp={true}/>
         </div>
       </div>
     </div>
@@ -406,7 +415,10 @@ function TerritoryShareTab({members,setMyId,onSelectTab}){
 
   const getV=t=>mode==="처"?t.score:t.salesAmt;
   const total=teamData.reduce((s,t)=>s+getV(t),0)||1;
-  const sorted=[...teamData].sort((a,b)=>getV(b)-getV(a));
+  const sorted=[...teamData].sort((a,b)=>{
+  if(getV(b) !== getV(a)) return getV(b) - getV(a);
+  return (b.salesAmt || 0) - (a.salesAmt || 0);
+});
   const king=sorted[0];
   const totalRiddle=members.reduce((s,m)=>s+m.riddle,0);
   const totalArke=members.reduce((s,m)=>s+m.arke,0);
@@ -499,7 +511,10 @@ function TerritoryShareTab({members,setMyId,onSelectTab}){
                   </div>
                   <div style={{fontSize:11,color:"#1A1A1A",fontWeight:700,marginBottom:8}}>팀원 {t.members.length}명</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                    {[...t.members].sort((a,b)=>b.total-a.total).map(m=>(
+                   {[...t.members].sort((a,b)=>{
+                        if (b.total !== a.total) return b.total - a.total;
+                        return (b.salesAmt || 0) - (a.salesAmt || 0);
+                        }).map(m=>(
                       <div key={m.id} onClick={e=>{e.stopPropagation();goMyPage(m);}}
                         style={{display:"flex",alignItems:"center",gap:4,
                           background:m.total>0?t.colorLight:"#F8FAFC",
@@ -903,7 +918,7 @@ const handleFileUpload=e=>{
     // ✅ salesAmt도 0으로 초기화 (하드코딩값 안 씀)
     let memberMap={};
     MEMBERS_INIT.forEach(m=>{
-      const key= m.name+"||"+m.branch;memberMap[Key]={...m,riddle:0,arke:0,total:0,streak:0,salesAmt:0};
+      const key= m.name+"||"+m.branch;memberMap[key]={...m,riddle:0,arke:0,total:0,streak:0,salesAmt:0};
     });
 
     allRows.slice(1).forEach(tr=>{
