@@ -950,7 +950,7 @@ if(!memberMap[key])memberMap[key]={
 
 const amtRaw=tds[8]?.innerText.trim().replace(/,/g,"").replace(/[^0-9-]/g,"");
 const amt=parseInt(amtRaw)||0;
-memberMap[key].salesAmt+=amt;
+
 
 let rCnt=0,aCnt=0;
 tds.forEach((td,i)=>{
@@ -960,6 +960,7 @@ tds.forEach((td,i)=>{
   else if(t.includes("arke")||t.includes("아르케"))aCnt++;
 });
 if(rCnt>0||aCnt>0){
+  memberMap[key].salesAmt+=amt;
   memberMap[key].riddle+=rCnt;
   memberMap[key].arke+=aCnt;
   memberMap[key].total+=(rCnt+aCnt);
