@@ -948,8 +948,8 @@ if(!memberMap[key])memberMap[key]={
   riddle:0,arke:0,total:0,streak:0,salesAmt:0
 };
 
-const amtRaw=tds[8]?.innerText.trim().replace(/,/g,"").replace(/[^0-9-]/g,"");
-const amt=parseInt(amtRaw)||0;
+const amtRaw=tds[8]?.innerText.trim().replace(/,/g,"");
+const amt=parseFloat(amtRaw)||0;
 
 
 let rCnt=0,aCnt=0;
