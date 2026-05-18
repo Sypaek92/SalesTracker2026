@@ -953,11 +953,11 @@ const amt=parseFloat(amtRaw)||0;
 
 
 let rCnt=0,aCnt=0;
-tds.forEach((td,i)=>{
-  if(i<3||i===10)return;
-  const t=td.innerText.trim().toLowerCase();
-  if(t.includes("riddle")||t.includes("리들"))rCnt++;
-  else if(t.includes("arke")||t.includes("아르케"))aCnt++;
+tds(let i=3;i<tds.length;i++){
+  if(i===10||i===8)continue;
+  const t=tds[i].innerText.trim().toLowerCase();
+  if(t.includes("riddle")||t.includes("리들")){rCnt=1;break;}
+  if(t.includes("arke")||t.includes("아르케")){rCnt=1;break;}
 });
 if(rCnt>0||aCnt>0){
   memberMap[key].salesAmt+=amt;
