@@ -921,52 +921,62 @@ const handleFileUpload=e=>{
       const key= m.name+"||"+m.branch;memberMap[key]={...m,riddle:0,arke:0,total:0,streak:0,salesAmt:0};
     });
 
+    // 디버그 카운터
+    let validRows=0, totalAmt=0, processedRows=0;
+
     allRows.slice(1).forEach(tr=>{
       const tds=tr.querySelectorAll("td");
       if(tds.length<11)return;
+      processedRows++;
 
-      // A열(index 0): 2026년 4~6월만
+      // [필터1] A열(index 0): 매출일 2026.04.01 ~ 2026.06.30
       const dateStr=tds[0]?.innerText.trim();
-      if(dateStr){
-        const d=new Date(dateStr);
-        if(isNaN(d))return;
-        const y=d.getFullYear(),mo=d.getMonth()+1;
-        if(!(y===2026&&mo>=4&&mo<=6))return;
+      if(!dateStr)return;
+      const d=new Date(dateStr);
+      if(isNaN(d))return;
+      const y=d.getFullYear(),mo=d.getMonth()+1;
+      if(y!==2026||mo<4||mo>6)return;
+
+      // [필터2] K열(index 10): 인정여부 = 1 (관대한 비교)
+      const recogn=(tds[10]?.innerText.trim()||"").replace(/\s/g,"");
+      if(recogn!=="1"&&recogn!=="1.0"&&recogn!=="1.00")return;
+
+      const name=tds[1]?.innerText.trim();
+      const branch=tds[2]?.innerText.trim();
+      if(!name)return;
+
+      // 이름+소속팀으로 유일 키 (동명이인 처리)
+      const key=name+"||"+branch;
+      if(!memberMap[key])memberMap[key]={
+        id:key,name,branch:branch||"",mr:"",
+        riddle:0,arke:0,total:0,streak:0,salesAmt:0
+      };
+
+      // [매출 합산] I열(index 8): 공급가액
+      // 사용자 정의 기준: 인정여부=1 + 4~6월 인 모든 행의 공급가액 합산
+      // (리들/아르케 키워드와 무관하게 합산해야 함)
+      const amtRaw=(tds[8]?.innerText.trim()||"").replace(/[^0-9.\-]/g,"");
+      const amt=parseFloat(amtRaw)||0;
+      memberMap[key].salesAmt+=amt;
+      validRows++;
+      totalAmt+=amt;
+
+      // [처(territory) 카운트] 리들/아르케 키워드 검색 (한 행당 최대 1처)
+      // 매출 합산과 분리되어 처 수만 별도 계산
+      let rCnt=0,aCnt=0;
+      for(let i=3;i<tds.length;i++){
+        if(i===10||i===8)continue;
+        const t=tds[i].innerText.trim().toLowerCase();
+        if(t.includes("riddle")||t.includes("리들")){rCnt=1;break;}
+        if(t.includes("arke")||t.includes("아르케")){aCnt=1;break;}
       }
-
-      // K열(index 10): 인정여부 = 1만
-      if(tds[10]?.innerText.trim()!=="1")return;
-
-     const name=tds[1]?.innerText.trim();
-const branch=tds[2]?.innerText.trim();
-if(!name)return;
-
-// 이름+소속팀으로 유일 키 생성 (동명이인 처리)
-const key=name+"||"+branch;
-if(!memberMap[key])memberMap[key]={
-  id:key,name,branch:branch||"",mr:"",
-  riddle:0,arke:0,total:0,streak:0,salesAmt:0
-};
-
-const amtRaw=tds[8]?.innerText.trim().replace(/,/g,"");
-const amt=parseFloat(amtRaw)||0;
-
-
-let rCnt=0,aCnt=0;
-for(let i=3;i<tds.length;i++){
-  if(i===10||i===8)continue;
-  const t=tds[i].innerText.trim().toLowerCase();
-  if(t.includes("riddle")||t.includes("리들")){rCnt=1;break;}
-  if(t.includes("arke")||t.includes("아르케")){aCnt=1;break;}
-}
-if(rCnt>0||aCnt>0){
-  memberMap[key].salesAmt+=amt;
-  memberMap[key].riddle+=rCnt;
-  memberMap[key].arke+=aCnt;
-  memberMap[key].total+=(rCnt+aCnt);
-  memberMap[key].streak+=1;
-}
-});
+      if(rCnt>0||aCnt>0){
+        memberMap[key].riddle+=rCnt;
+        memberMap[key].arke+=aCnt;
+        memberMap[key].total+=(rCnt+aCnt);
+        memberMap[key].streak+=1;
+      }
+    });
     const nm=Object.values(memberMap)
       .sort((a,b)=>b.total!==a.total?b.total-a.total:(b.salesAmt||0)-(a.salesAmt||0))
       .map((m,i)=>({...m,id:i+1}));
@@ -980,7 +990,7 @@ if(rCnt>0||aCnt>0){
           headers:{"Content-Type":"application/json"},
           body:JSON.stringify(nm)
         });
-        alert("✅ 서버 저장 완료!\n기준: 2026년 4~6월 / K열=1 / I열 매출액");
+        alert(`✅ 서버 저장 완료!\n기간: 2026.04.01 ~ 06.30\n인정여부=1 처리행: ${validRows}개\n공급가액 합계: ${totalAmt.toLocaleString()}원`);
       }catch(err){
         alert("⚠️ 화면 적용은 됐지만 서버 저장 실패:\n"+err.message);
       }
