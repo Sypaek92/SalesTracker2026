@@ -876,7 +876,7 @@ function App(){
   const[brandPopup,setBrandPopup]=useState(null);
 
   useEffect(()=>{
-    fetch(`${DB_URL}/members.json`)
+    fetch(`${DB_URL} members.json`)
       .then(r=>r.json())
       .then(data=>{
         if(Array.isArray(data)&&data.length>0){
@@ -961,7 +961,7 @@ const handleFileUpload=e=>{
       setMembers(nm);
       setMyId(nm[0].id);
       try{
-        await fetch(`${DB_URL}/members.json`,{
+        await fetch(`${DB_URL} members.json`,{
           method:"PUT",
           headers:{"Content-Type":"application/json"},
           body:JSON.stringify(nm)
